@@ -30,6 +30,7 @@ export default async function ActivityLogsPage() {
       include: {
         user: { select: { name: true } },
         jobPost: { select: { title: true } },
+        internship: { select: { title: true } },
       },
     }),
     prisma.communityThread.findMany({
@@ -62,14 +63,16 @@ export default async function ActivityLogsPage() {
       description: `${j.title} at ${j.company}`,
       timestamp: j.createdAt,
     })),
-    ...recentApplications.map(a => ({
-      type: 'application_submitted',
-      icon: FiFileText,
-      color: 'bg-purple-500',
-      title: `Application submitted`,
-      description: `${a.user.name} applied for ${a.jobPost.title}`,
-      timestamp: a.createdAt,
-    })),
+    ...recentApplications
+      .filter(a => a.user && (a.jobPost || a.internship)) // Filter out applications with null user or both jobPost and internship
+      .map(a => ({
+        type: 'application_submitted',
+        icon: FiFileText,
+        color: 'bg-purple-500',
+        title: `Application submitted`,
+        description: `${a.user.name} applied for ${a.jobPost?.title || a.internship?.title || 'Unknown Position'}`,
+        timestamp: a.createdAt,
+      })),
     ...recentThreads.map(t => ({
       type: 'thread_created',
       icon: FiMessageSquare,
