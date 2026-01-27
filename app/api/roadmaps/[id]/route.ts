@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await params
     
     if (!session) {
       return NextResponse.json(
@@ -19,7 +20,7 @@ export async function DELETE(
 
     await prisma.careerRoadmap.delete({
       where: {
-        id: params.id,
+        id,
         userId: session.user.id, // Ensure user owns the roadmap
       },
     })

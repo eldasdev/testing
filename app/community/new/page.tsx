@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { FiMessageSquare, FiArrowLeft, FiArrowRight, FiCheck } from 'react-icons/fi'
+import MediaUpload from '@/components/MediaUpload'
+import { useAlertModal } from '@/components/ui/AlertModal'
 
 export default function NewThreadPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const { AlertComponent } = useAlertModal()
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     category: 'Career Advice',
+    media: [] as string[],
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -35,12 +39,17 @@ export default function NewThreadPage() {
       const response = await fetch('/api/community/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          title: formData.title,
+          content: formData.content,
+          category: formData.category,
+          media: formData.media,
+        }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        router.push(`/community/${data.id}`)
+        router.push(`/community/${data.slug || data.id}`)
       } else {
         setError('Failed to create thread. Please try again.')
       }
@@ -154,6 +163,15 @@ export default function NewThreadPage() {
                     Tip: Be specific and provide context to get better responses
                   </p>
                 </div>
+
+                <div>
+                  <MediaUpload
+                    media={formData.media}
+                    onChange={(media) => setFormData({ ...formData, media })}
+                    maxFiles={5}
+                    maxSize={10}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-100">
@@ -189,6 +207,7 @@ export default function NewThreadPage() {
           </div>
         </div>
       </section>
+      <AlertComponent />
     </div>
   )
 }

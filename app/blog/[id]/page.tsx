@@ -1,12 +1,31 @@
 import { prisma } from '@/lib/prisma'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { format } from 'date-fns'
 import { FiUser, FiEye, FiHeart } from 'react-icons/fi'
+import MediaDisplay from '@/components/MediaDisplay'
 
-export default async function BlogPostPage({ params }: { params: { id: string } }) {
-  const post = await prisma.blogPost.findUnique({
-    where: { id: params.id },
-    include: {
+export default async function BlogPostPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  // Try to find by slug first, then by id (for backward compatibility)
+  const post = await prisma.blogPost.findFirst({
+    where: {
+      OR: [
+        { slug: id },
+        { id },
+      ],
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      content: true,
+      excerpt: true,
+      isAIGenerated: true,
+      tags: true,
+      media: true,
+      views: true,
+      likes: true,
+      createdAt: true,
       author: {
         select: {
           name: true,
@@ -20,9 +39,14 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
     notFound()
   }
 
+  // Redirect to slug URL if accessed via ID
+  if (post.slug && id !== post.slug) {
+    redirect(`/blog/${post.slug}`)
+  }
+
   // Increment view count
   await prisma.blogPost.update({
-    where: { id: params.id },
+    where: { id: post.id },
     data: { views: { increment: 1 } },
   })
 
@@ -59,6 +83,16 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
         <div className="prose max-w-none">
           <div className="text-gray-700 whitespace-pre-line">{post.content}</div>
         </div>
+
+        {post.media && post.media.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {post.media.map((url: string, index: number) => (
+              <div key={index} className="rounded-lg overflow-hidden border border-gray-200">
+                <MediaDisplay url={url} alt={`Media ${index + 1}`} index={index} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {post.tags.length > 0 && (
           <div className="mt-8 pt-6 border-t">

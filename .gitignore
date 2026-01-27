@@ -12,6 +12,10 @@
 /.next/
 /out/
 
+# uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # production
 /build
 

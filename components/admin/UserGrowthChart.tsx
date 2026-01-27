@@ -8,8 +8,8 @@ interface UserGrowthChartProps {
 
 export default async function UserGrowthChart({ totalUsers }: UserGrowthChartProps) {
   // Get user registrations for the last 6 months
-  const months = []
-  const data = []
+  const months: string[] = []
+  const data: number[] = []
   
   for (let i = 5; i >= 0; i--) {
     const monthStart = startOfMonth(subMonths(new Date(), i))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import ResumeForm from '@/components/resume/ResumeForm'
 import ResumePreview from '@/components/resume/ResumePreview'
@@ -21,6 +21,7 @@ export default function ResumeBuilderPage() {
       linkedin: '',
       github: '',
       portfolio: '',
+      profileImage: null as string | null,
     },
     summary: '',
     experience: [] as any[],
@@ -30,6 +31,33 @@ export default function ResumeBuilderPage() {
     projects: [] as any[],
     certifications: [] as any[],
   })
+
+  // Fetch user profile data including image
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            setResumeData(prev => ({
+              ...prev,
+              personalInfo: {
+                ...prev.personalInfo,
+                fullName: data.user.name || prev.personalInfo.fullName,
+                email: data.user.email || prev.personalInfo.email,
+                phone: data.user.phone || prev.personalInfo.phone,
+                address: data.user.location || prev.personalInfo.address,
+                linkedin: data.user.profile?.linkedinUrl || prev.personalInfo.linkedin,
+                github: data.user.profile?.githubUrl || prev.personalInfo.github,
+                portfolio: data.user.profile?.portfolioUrl || prev.personalInfo.portfolio,
+                profileImage: data.user.image || null,
+              },
+            }))
+          }
+        })
+        .catch(err => console.error('Failed to fetch user profile:', err))
+    }
+  }, [session])
 
   const features = [
     { icon: FiLayout, title: 'Professional Templates', description: 'Choose from modern designs' },
@@ -126,13 +154,7 @@ export default function ResumeBuilderPage() {
             {/* Preview Side */}
             <div className={!previewMode ? 'hidden lg:block' : ''}>
               <div className="card p-6 md:p-8 sticky top-24">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-                  <h2 className="text-lg font-bold text-gray-900">Preview</h2>
-                  <button className="btn btn-secondary text-sm">
-                    <FiDownload className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </button>
-                </div>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Resume Preview</h2>
                 <ResumePreview resumeData={resumeData} />
               </div>
             </div>

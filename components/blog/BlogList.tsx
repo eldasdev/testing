@@ -5,6 +5,7 @@ import { FiEye, FiHeart } from 'react-icons/fi'
 interface BlogPost {
   id: string
   title: string
+  slug: string
   excerpt: string | null
   author: {
     name: string
@@ -34,7 +35,7 @@ export default function BlogList({ posts }: BlogListProps) {
       {posts.map((post, index) => (
         <Link
           key={post.id}
-          href={`/blog/${post.id}`}
+          href={`/blog/${post.slug || post.id}`}
           className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-gray-100 p-6 card-hover overflow-hidden relative animate-slide-up"
           style={{ animationDelay: `${index * 100}ms` }}
         >

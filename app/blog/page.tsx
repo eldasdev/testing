@@ -9,7 +9,15 @@ export default async function BlogPage() {
   const session = await getServerSession(authOptions)
   
   const posts = await prisma.blogPost.findMany({
-    include: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      excerpt: true,
+      isAIGenerated: true,
+      views: true,
+      likes: true,
+      createdAt: true,
       author: {
         select: {
           name: true,
@@ -61,11 +69,6 @@ export default async function BlogPage() {
           </div>
         </div>
         
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg className="w-full h-12 md:h-16" viewBox="0 0 1440 74" fill="none">
-            <path d="M0 74V25.5C240 -8.5 480 -8.5 720 25.5C960 59.5 1200 59.5 1440 25.5V74H0Z" fill="#f8fafc"/>
-          </svg>
-        </div>
       </section>
 
       {/* Main Content */}

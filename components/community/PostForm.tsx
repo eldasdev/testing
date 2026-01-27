@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import MediaUpload from '@/components/MediaUpload'
+import { useAlertModal } from '@/components/ui/AlertModal'
 
 interface PostFormProps {
   threadId: string
@@ -9,7 +11,9 @@ interface PostFormProps {
 
 export default function PostForm({ threadId }: PostFormProps) {
   const router = useRouter()
+  const { AlertComponent } = useAlertModal()
   const [content, setContent] = useState('')
+  const [media, setMedia] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,11 +24,12 @@ export default function PostForm({ threadId }: PostFormProps) {
       const response = await fetch('/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, content }),
+        body: JSON.stringify({ threadId, content, media }),
       })
 
       if (response.ok) {
         setContent('')
+        setMedia([])
         router.refresh()
       }
     } catch (error) {
@@ -45,6 +50,14 @@ export default function PostForm({ threadId }: PostFormProps) {
         onChange={(e) => setContent(e.target.value)}
         placeholder="Write your reply..."
       />
+      <div className="mb-4">
+        <MediaUpload
+          media={media}
+          onChange={setMedia}
+          maxFiles={3}
+          maxSize={10}
+        />
+      </div>
       <button
         type="submit"
         disabled={!content.trim() || loading}
@@ -52,6 +65,7 @@ export default function PostForm({ threadId }: PostFormProps) {
       >
         {loading ? 'Posting...' : 'Post Reply'}
       </button>
+      <AlertComponent />
     </form>
   )
 }

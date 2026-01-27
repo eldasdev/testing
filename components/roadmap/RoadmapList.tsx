@@ -19,6 +19,8 @@ interface RoadmapListProps {
 
 export default function RoadmapList({ roadmaps, onUpdate }: RoadmapListProps) {
   const handleDelete = async (id: string) => {
+    // Note: Confirm modal would require importing useConfirmModal hook
+    // For now, keeping confirm but this should be updated if modal is needed
     if (!confirm('Are you sure you want to delete this roadmap?')) return
 
     try {

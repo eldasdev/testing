@@ -1,10 +1,14 @@
+'use client'
+
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { FiMessageSquare, FiEye, FiHeart, FiBookmark } from 'react-icons/fi'
+import VoteButtons from './VoteButtons'
 
 interface Thread {
   id: string
   title: string
+  slug: string
   category: string
   author: {
     name: string
@@ -12,6 +16,8 @@ interface Thread {
   }
   views: number
   likes: number
+  upvotes: number
+  downvotes: number
   isPinned: boolean
   createdAt: Date
   posts: any[]
@@ -38,7 +44,7 @@ export default function CommunityThreadList({ threads }: CommunityThreadListProp
       {threads.map((thread, index) => (
         <Link
           key={thread.id}
-          href={`/community/${thread.id}`}
+          href={`/community/${thread.slug || thread.id}`}
           className={`group block bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border ${
             thread.isPinned 
               ? 'border-l-4 border-l-primary-600 border-t border-r border-b border-gray-100' 
@@ -74,21 +80,30 @@ export default function CommunityThreadList({ threads }: CommunityThreadListProp
                 <span className="text-gray-500">{format(new Date(thread.createdAt), 'MMM d, yyyy')}</span>
               </div>
 
-              <div className="flex items-center space-x-6 text-sm pl-11">
-                <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg">
-                  <FiMessageSquare className="w-4 h-4 text-blue-600" />
-                  <span className="font-semibold text-blue-700">
-                    {thread._count.posts} {thread._count.posts === 1 ? 'reply' : 'replies'}
-                  </span>
+              <div className="flex items-center justify-between pl-11">
+                <div className="flex items-center space-x-6 text-sm">
+                  <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg">
+                    <FiMessageSquare className="w-4 h-4 text-blue-600" />
+                    <span className="font-semibold text-blue-700">
+                      {thread._count.posts} {thread._count.posts === 1 ? 'reply' : 'replies'}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <FiEye className="w-4 h-4" />
+                    <span className="font-medium">{thread.views}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-red-500">
+                    <FiHeart className="w-4 h-4" />
+                    <span className="font-medium">{thread.likes}</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <FiEye className="w-4 h-4" />
-                  <span className="font-medium">{thread.views}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-red-500">
-                  <FiHeart className="w-4 h-4" />
-                  <span className="font-medium">{thread.likes}</span>
-                </div>
+                <VoteButtons
+                  threadId={thread.id}
+                  initialUpvotes={thread.upvotes}
+                  initialDownvotes={thread.downvotes}
+                  size="sm"
+                  orientation="horizontal"
+                />
               </div>
             </div>
           </div>

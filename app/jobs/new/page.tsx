@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FiBriefcase, FiMapPin, FiDollarSign, FiX, FiPlus, FiArrowLeft, FiCheck, FiArrowRight } from 'react-icons/fi'
 import Link from 'next/link'
+import LocationPicker from '@/components/jobs/LocationPicker'
 
 export default function NewJobPage() {
   const { data: session, status } = useSession()
@@ -17,6 +18,10 @@ export default function NewJobPage() {
     description: '',
     company: '',
     location: '',
+    address: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
+    placeId: '',
     type: 'FULL_TIME',
     experienceLevel: 'ENTRY',
     salaryMin: '',
@@ -89,10 +94,14 @@ export default function NewJobPage() {
         description: formData.description,
         company: formData.company,
         location: formData.location,
+        address: formData.address || null,
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null,
+        placeId: formData.placeId || null,
         type: formData.type,
         experienceLevel: formData.experienceLevel,
-        salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : null,
-        salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : null,
+        salaryMin: formData.salaryMin ? formData.salaryMin : null,
+        salaryMax: formData.salaryMax ? formData.salaryMax : null,
         currency: formData.currency,
         applicationDeadline: formData.applicationDeadline || null,
         requirements,
@@ -263,17 +272,29 @@ export default function NewJobPage() {
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
+                  <div className="sm:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Location <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <LocationPicker
+                      value={{
+                        location: formData.location,
+                        address: formData.address,
+                        latitude: formData.latitude,
+                        longitude: formData.longitude,
+                        placeId: formData.placeId,
+                      }}
+                      onChange={(locationData) => {
+                        setFormData({
+                          ...formData,
+                          location: locationData.location,
+                          address: locationData.address || '',
+                          latitude: locationData.latitude,
+                          longitude: locationData.longitude,
+                          placeId: locationData.placeId || '',
+                        })
+                      }}
                       required
-                      className="input"
-                      placeholder="e.g., Tashkent"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
                   </div>
 

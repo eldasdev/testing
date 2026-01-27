@@ -14,9 +14,9 @@ export default async function SettingsPage() {
       iconName: 'FiGlobe',
       color: 'bg-blue-500',
       settings: [
-        { name: 'Platform Name', value: 'StudentHire', type: 'text' },
-        { name: 'Contact Email', value: 'admin@studenthire.uz', type: 'email' },
-        { name: 'Support Phone', value: '+998 99 123 4567', type: 'tel' },
+        { name: 'Platform Name', value: 'StudentHire', type: 'text' as const },
+        { name: 'Contact Email', value: 'admin@studenthire.uz', type: 'email' as const },
+        { name: 'Support Phone', value: '+998 99 123 4567', type: 'tel' as const },
       ],
     },
     {
@@ -25,9 +25,9 @@ export default async function SettingsPage() {
       iconName: 'FiMail',
       color: 'bg-purple-500',
       settings: [
-        { name: 'Welcome Email', value: true, type: 'toggle' },
-        { name: 'Application Notifications', value: true, type: 'toggle' },
-        { name: 'Weekly Digest', value: false, type: 'toggle' },
+        { name: 'Welcome Email', value: true, type: 'toggle' as const },
+        { name: 'Application Notifications', value: true, type: 'toggle' as const },
+        { name: 'Weekly Digest', value: false, type: 'toggle' as const },
       ],
     },
     {
@@ -36,9 +36,9 @@ export default async function SettingsPage() {
       iconName: 'FiBell',
       color: 'bg-orange-500',
       settings: [
-        { name: 'New User Alerts', value: true, type: 'toggle' },
-        { name: 'Job Post Alerts', value: true, type: 'toggle' },
-        { name: 'Report Alerts', value: true, type: 'toggle' },
+        { name: 'New User Alerts', value: true, type: 'toggle' as const },
+        { name: 'Job Post Alerts', value: true, type: 'toggle' as const },
+        { name: 'Report Alerts', value: true, type: 'toggle' as const },
       ],
     },
   ]
@@ -50,9 +50,9 @@ export default async function SettingsPage() {
       iconName: 'FiLock',
       color: 'bg-red-500',
       settings: [
-        { name: 'Two-Factor Authentication', value: false, type: 'toggle' },
-        { name: 'Session Timeout (minutes)', value: '60', type: 'number' },
-        { name: 'Max Login Attempts', value: '5', type: 'number' },
+        { name: 'Two-Factor Authentication', value: false, type: 'toggle' as const },
+        { name: 'Session Timeout (minutes)', value: '60', type: 'number' as const },
+        { name: 'Max Login Attempts', value: '5', type: 'number' as const },
       ],
     },
     {
@@ -61,9 +61,9 @@ export default async function SettingsPage() {
       iconName: 'FiDatabase',
       color: 'bg-cyan-500',
       settings: [
-        { name: 'Auto Backup', value: true, type: 'toggle' },
-        { name: 'Backup Frequency', value: 'daily', type: 'select', options: ['hourly', 'daily', 'weekly'] },
-        { name: 'Data Retention (days)', value: '365', type: 'number' },
+        { name: 'Auto Backup', value: true, type: 'toggle' as const },
+        { name: 'Backup Frequency', value: 'daily', type: 'select' as const, options: ['hourly', 'daily', 'weekly'] },
+        { name: 'Data Retention (days)', value: '365', type: 'number' as const },
       ],
     },
   ]

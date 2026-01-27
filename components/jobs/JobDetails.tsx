@@ -1,18 +1,23 @@
 import { FiMapPin, FiBriefcase, FiClock, FiDollarSign, FiUser, FiCheck, FiGift, FiCalendar, FiMail } from 'react-icons/fi'
 import { format } from 'date-fns'
+import JobLocationMap from './JobLocationMap'
 
 interface Job {
   id: string
   title: string
   company: string
   location: string
+  address?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  placeId?: string | null
   type: string
   experienceLevel: string
   description: string
   requirements: string[]
   benefits: string[]
-  salaryMin?: number | null
-  salaryMax?: number | null
+  salaryMin?: number | string | bigint | null
+  salaryMax?: number | string | bigint | null
   currency?: string | null
   applicationDeadline?: Date | null
   createdAt: Date
@@ -66,11 +71,21 @@ export default function JobDetails({ job }: JobDetailsProps) {
           <div className="inline-flex items-center space-x-2 px-4 py-2.5 bg-green-50 rounded-xl border border-green-100">
             <FiDollarSign className="w-5 h-5 text-green-600" />
             <span className="text-lg font-bold text-green-700">
-              {job.salaryMin && job.salaryMax
-                ? `${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()} ${job.currency || 'UZS'}`
-                : job.salaryMin
-                ? `From ${job.salaryMin.toLocaleString()} ${job.currency || 'UZS'}`
-                : `Up to ${job.salaryMax?.toLocaleString()} ${job.currency || 'UZS'}`}
+              {(() => {
+                const min = job.salaryMin ? (typeof job.salaryMin === 'bigint' ? job.salaryMin.toString() : String(job.salaryMin)) : null
+                const max = job.salaryMax ? (typeof job.salaryMax === 'bigint' ? job.salaryMax.toString() : String(job.salaryMax)) : null
+                const minNum = min ? Number(min) : null
+                const maxNum = max ? Number(max) : null
+                
+                if (minNum && maxNum) {
+                  return `${minNum.toLocaleString()} - ${maxNum.toLocaleString()} ${job.currency || 'UZS'}`
+                } else if (minNum) {
+                  return `From ${minNum.toLocaleString()} ${job.currency || 'UZS'}`
+                } else if (maxNum) {
+                  return `Up to ${maxNum.toLocaleString()} ${job.currency || 'UZS'}`
+                }
+                return ''
+              })()}
             </span>
           </div>
         )}
@@ -131,6 +146,17 @@ export default function JobDetails({ job }: JobDetailsProps) {
           </ul>
         </div>
       )}
+
+      {/* Location Map */}
+      <div className="py-6 border-b border-gray-100">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Location</h2>
+        <JobLocationMap
+          latitude={job.latitude}
+          longitude={job.longitude}
+          address={job.address}
+          location={job.location}
+        />
+      </div>
 
       {/* Posted By */}
       <div className="pt-6">

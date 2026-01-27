@@ -48,6 +48,7 @@ npm install
 Create a `.env` file in the root directory:
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/studenthire?schema=public"
+NEXT_PUBLIC_YANDEX_MAPS_API_KEY="your-yandex-maps-api-key-here"
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key-here-change-in-production
 ```

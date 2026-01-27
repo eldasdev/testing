@@ -1,10 +1,11 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
+import Image from 'next/image'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import ProfileForm from '@/components/profile/ProfileForm'
 import ReportIssueButton from '@/components/ReportIssueButton'
-import { FiUser, FiShield, FiAward, FiCalendar } from 'react-icons/fi'
+import { FiUser, FiShield, FiAward, FiCalendar, FiImage } from 'react-icons/fi'
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions)
@@ -17,7 +18,14 @@ export default async function ProfilePage() {
     where: { id: session.user.id },
     include: {
       profile: true,
-      skills: true,
+      skills: {
+        include: {
+          skillCatalog: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
     },
   })
 
@@ -37,9 +45,41 @@ export default async function ProfilePage() {
       <section className="bg-white border-b border-gray-100">
         <div className="container-custom py-8 md:py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 animate-fade-in-up">
-            <div className="avatar avatar-xl shadow-lg">
-              {user.name?.charAt(0) || 'U'}
-            </div>
+            {user.role === 'COMPANY' ? (
+              user.logo ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
+                  <Image
+                    src={user.logo}
+                    alt={`${user.name} logo`}
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="avatar avatar-xl shadow-lg bg-gradient-to-br from-primary-400 to-primary-600">
+                  <FiImage className="w-12 h-12 text-white" />
+                </div>
+              )
+            ) : (
+              user.image ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
+                  <Image
+                    src={user.image}
+                    alt={`${user.name} profile`}
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="avatar avatar-xl shadow-lg">
+                  {user.name?.charAt(0) || 'U'}
+                </div>
+              )
+            )}
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <div>

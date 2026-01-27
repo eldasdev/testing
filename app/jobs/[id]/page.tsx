@@ -10,16 +10,17 @@ import { FiArrowLeft, FiBriefcase } from 'react-icons/fi'
 export default async function JobDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const session = await getServerSession(authOptions)
+  const { id } = await params
   
   // Redirect guest users to sign in page
   if (!session) {
-    redirect(`/auth/signin?callbackUrl=/jobs/${params.id}`)
+    redirect(`/auth/signin?callbackUrl=/jobs/${id}`)
   }
   const job = await prisma.jobPost.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       postedBy: {
         select: {
@@ -46,6 +47,13 @@ export default async function JobDetailPage({
       },
     })
     hasApplied = !!application
+  }
+
+  // Convert BigInt values to strings for component
+  const jobWithStringSalaries = {
+    ...job,
+    salaryMin: job.salaryMin ? job.salaryMin.toString() : null,
+    salaryMax: job.salaryMax ? job.salaryMax.toString() : null,
   }
 
   return (
@@ -78,7 +86,7 @@ export default async function JobDetailPage({
         <div className="container-custom">
           <div className="max-w-4xl mx-auto animate-fade-in-up">
             <div className="card p-6 md:p-8">
-              <JobDetails job={job} />
+              <JobDetails job={jobWithStringSalaries} />
               
               {session.user.role === 'STUDENT' && (
                 <div className="mt-8 pt-6 border-t border-gray-100">

@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logActivity, getRequestMetadata } from '@/lib/activity-log'
+import { generateSlugFromTitle } from '@/lib/slug'
 import { z } from 'zod'
 
 const aiQuestionSchema = z.object({
   question: z.string().min(10),
+  media: z.array(z.string()).optional().default([]),
 })
 
 // Mock AI response - in production, integrate with OpenAI API
@@ -84,25 +87,56 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { question } = aiQuestionSchema.parse(body)
+    const { question, media } = aiQuestionSchema.parse(body)
 
     // Generate AI response (mock - replace with actual OpenAI API call)
     const answer = generateAIResponse(question)
 
+    const title = question.length > 100 ? question.substring(0, 100) + '...' : question
+
+    // Generate unique slug from title
+    const slug = await generateSlugFromTitle(
+      title,
+      async (slug) => {
+        const existing = await prisma.blogPost.findUnique({
+          where: { slug },
+        })
+        return !!existing
+      }
+    )
+
     // Save as blog post
     const post = await prisma.blogPost.create({
       data: {
-        title: question.length > 100 ? question.substring(0, 100) + '...' : question,
+        title,
+        slug,
         content: answer,
         excerpt: answer.substring(0, 200) + '...',
         authorId: session.user.id,
         isAIGenerated: true,
         tags: ['AI', 'Career Advice'],
+        media: Array.isArray(media) && media.length > 0 ? media : [],
       },
+    })
+
+    // Log blog post creation
+    const { ipAddress, userAgent } = getRequestMetadata(request)
+    await logActivity({
+      action: 'blog_post_created',
+      actionType: 'CREATE',
+      entityType: 'BlogPost',
+      entityId: post.id,
+      userId: session.user.id,
+      description: `${session.user.name} created AI-generated blog post: "${post.title}"`,
+      metadata: { title: post.title, isAIGenerated: true },
+      ipAddress,
+      userAgent,
     })
 
     return NextResponse.json({
       answer,
+      id: post.id,
+      slug: post.slug,
       postId: post.id,
     })
   } catch (error) {

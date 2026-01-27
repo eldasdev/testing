@@ -39,13 +39,28 @@ enum ExperienceLevel {
   SENIOR
 }
 
+enum SkillProficiency {
+  BEGINNER
+  JUNIOR
+  MIDDLE
+  SENIOR
+  EXPERT
+}
+
+enum ReactionType {
+  UPVOTE
+  DOWNVOTE
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
   password      String?
   name          String
+  slug          String?   @unique
   role          UserRole  @default(STUDENT)
-  image         String?
+  image         String?  // Profile image for non-COMPANY users
+  logo          String?  // Company logo for COMPANY users
   bio           String?
   location      String?
   phone         String?
@@ -65,6 +80,10 @@ model User {
   receivedMessages Message[]   @relation("Receiver")
   roadmaps      CareerRoadmap[]
   practiceSubmissions PracticeSubmission[]
+  challenges    Challenge[] @relation("ChallengeCreator")
+  deletedItems  TrashBin[]  @relation("TrashDeleter")
+  activityLogs  ActivityLog[] @relation("ActivityUser")
+  threadReactions ThreadReaction[] @relation("ThreadReactions")
   accounts      Account[]
   sessions      Session[]
 }
@@ -113,25 +132,56 @@ model UserProfile {
 }
 
 model UserSkill {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillCatalogId  String?
+  skillCatalog    SkillCatalog?    @relation(fields: [skillCatalogId], references: [id])
+  name            String
+  proficiency     SkillProficiency @default(JUNIOR)
+  yearsExperience Float?           // Years of experience with this skill
+  category        String?          // e.g., "Technical", "Soft Skills"
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt @default(now())
+
+  @@unique([userId, name])
+}
+
+model SkillCatalog {
   id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  level       Int      @default(1) // 1-5
-  category    String?  // e.g., "Technical", "Soft Skills"
+  name        String   @unique
+  category    String   // e.g., "Programming Languages", "Frameworks", "Soft Skills"
+  industry    String   // e.g., "IT", "Finance", "Marketing", "Healthcare"
+  description String?
+  icon        String?  // Icon name or URL
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  usageCount  Int      @default(0) // How many users have this skill
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userSkills  UserSkill[]
+
+  @@index([category])
+  @@index([industry])
+  @@index([isPopular])
 }
 
 model JobPost {
   id              String          @id @default(cuid())
   title           String
+  slug            String?         @unique
   description     String          @db.Text
   company         String
-  location        String
+  location        String          // Display location (e.g., "Tashkent, Uzbekistan")
+  address         String?         // Full address from Google Maps
+  latitude        Float?          // Latitude coordinate
+  longitude       Float?          // Longitude coordinate
+  placeId         String?         // Google Maps Place ID
   type            JobType
   experienceLevel ExperienceLevel
-  salaryMin       Int?
-  salaryMax       Int?
+  salaryMin       BigInt?
+  salaryMax       BigInt?
   currency         String?        @default("UZS")
   requirements    String[]        // Array of requirements
   benefits        String[]        // Array of benefits
@@ -144,6 +194,8 @@ model JobPost {
 
   applications    Application[]
   tags            JobTag[]
+
+  @@index([slug])
 }
 
 model JobTag {
@@ -160,7 +212,7 @@ model Internship {
   company         String
   location        String
   duration        String?        // e.g., "3 months", "6 months"
-  stipend         Int?
+  stipend         BigInt?
   currency         String?        @default("UZS")
   requirements    String[]
   benefits        String[]
@@ -220,33 +272,44 @@ model Resume {
 model BlogPost {
   id          String   @id @default(cuid())
   title       String
+  slug        String   @unique
   content     String   @db.Text
   excerpt     String?
   authorId    String
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   isAIGenerated Boolean @default(false)
   tags        String[]
+  media       String[] @default([]) // Array of media file URLs (images, videos, etc.)
   views       Int      @default(0)
   likes       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([slug])
 }
 
 model CommunityThread {
   id          String   @id @default(cuid())
   title       String
+  slug        String   @unique
   content     String   @db.Text
   authorId    String
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category    String   // e.g., "Career Advice", "Interview Tips", "Networking"
+  media       String[] @default([]) // Array of media file URLs (images, videos, etc.)
   views       Int      @default(0)
   likes       Int      @default(0)
+  upvotes     Int      @default(0)
+  downvotes   Int      @default(0)
   isPinned    Boolean  @default(false)
   isLocked    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   posts       CommunityPost[]
+  reactions   ThreadReaction[]
+
+  @@index([slug])
 }
 
 model CommunityPost {
@@ -256,9 +319,24 @@ model CommunityPost {
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   threadId    String
   thread      CommunityThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  media       String[] @default([]) // Array of media file URLs (images, videos, etc.)
   likes       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model ThreadReaction {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    CommunityThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("ThreadReactions", fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(UPVOTE)
+  createdAt DateTime @default(now())
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
 }
 
 model Message {
@@ -284,11 +362,46 @@ model CareerRoadmap {
   updatedAt   DateTime @updatedAt
 }
 
+model Challenge {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String   @db.Text
+  type          String   // "coding", "interview", "quiz", "system_design", etc.
+  difficulty    String   // "easy", "medium", "hard", "expert"
+  category      String   // "Programming", "Interview", "Database", etc.
+  instructions  String?  @db.Text
+  problem       String?  @db.Text // Problem statement for coding challenges
+  testCases     Json?    // Test cases for coding challenges
+  expectedOutput String? @db.Text
+  solution      String?  @db.Text // Reference solution (hidden from users)
+  hints         String[] // Array of hints
+  tags          String[] // Tags for filtering
+  timeLimit     Int?     // Time limit in minutes
+  points        Int       @default(100) // Points awarded for completion
+  isActive      Boolean   @default(true)
+  isPublic      Boolean   @default(true)
+  startDate     DateTime?
+  endDate       DateTime?
+  createdById   String
+  createdBy     User      @relation("ChallengeCreator", fields: [createdById], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  submissions   PracticeSubmission[]
+
+  @@index([type])
+  @@index([difficulty])
+  @@index([category])
+  @@index([isActive])
+}
+
 model PracticeSubmission {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   challengeType String // e.g., "coding", "interview", "quiz"
   solution    String?  @db.Text
   score       Int?
@@ -308,4 +421,44 @@ model PerformanceMetrics {
   communityEngagement Int    @default(0)
   lastCalculated    DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model TrashBin {
+  id            String   @id @default(cuid())
+  itemType      String   // 'User', 'JobPost', 'Challenge', 'BlogPost', 'Thread', etc.
+  itemId        String   // Original ID of the deleted item
+  itemData      Json     // Full data of the deleted item
+  deletedBy     String   // User ID who deleted it
+  deletedByUser User     @relation("TrashDeleter", fields: [deletedBy], references: [id])
+  deletedAt     DateTime @default(now())
+  expiresAt     DateTime // Auto-delete after 30 days
+  restored      Boolean  @default(false)
+  restoredAt     DateTime?
+  permanentlyDeleted Boolean @default(false)
+
+  @@index([itemType])
+  @@index([deletedAt])
+  @@index([expiresAt])
+  @@index([restored])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String   // e.g., 'user_registered', 'job_posted', 'application_submitted', 'admin_action', etc.
+  actionType  String   // 'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'LOGIN', 'LOGOUT', etc.
+  entityType  String   // 'User', 'JobPost', 'Application', 'Challenge', 'BlogPost', etc.
+  entityId    String?  // ID of the affected entity
+  userId      String?  // User who performed the action
+  user        User?    @relation("ActivityUser", fields: [userId], references: [id])
+  description String   @db.Text // Human-readable description
+  metadata    Json?    // Additional data (IP address, user agent, changes, etc.)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([actionType])
+  @@index([entityType])
+  @@index([userId])
+  @@index([createdAt])
 }

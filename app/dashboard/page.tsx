@@ -8,7 +8,7 @@ import PerformanceCard from '@/components/dashboard/PerformanceCard'
 import QuickActions from '@/components/dashboard/QuickActions'
 import ReportIssueButton from '@/components/ReportIssueButton'
 import Link from 'next/link'
-import { FiArrowRight, FiBriefcase, FiFileText, FiTarget, FiUser } from 'react-icons/fi'
+import { FiArrowRight, FiBriefcase, FiFileText, FiTarget, FiUser, FiUsers, FiPlus } from 'react-icons/fi'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -16,6 +16,8 @@ export default async function DashboardPage() {
   if (!session) {
     redirect('/auth/signin')
   }
+
+  const isCompany = session.user.role === 'COMPANY'
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -30,18 +32,63 @@ export default async function DashboardPage() {
         },
         orderBy: { createdAt: 'desc' },
       },
+      ...(isCompany ? {
+        jobPosts: {
+          take: 5,
+          include: {
+            _count: {
+              select: { applications: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      } : {}),
     },
   })
 
   const jobCount = await prisma.jobPost.count({ where: { isActive: true } })
   const internshipCount = await prisma.internship.count({ where: { isActive: true } })
 
-  const quickLinks = [
-    { href: '/jobs', label: 'Browse Jobs', icon: FiBriefcase, color: 'from-blue-500 to-blue-600' },
-    { href: '/resume-builder', label: 'Build Resume', icon: FiFileText, color: 'from-green-500 to-green-600' },
-    { href: '/roadmap', label: 'Career Roadmap', icon: FiTarget, color: 'from-purple-500 to-purple-600' },
-    { href: '/profile', label: 'Edit Profile', icon: FiUser, color: 'from-orange-500 to-orange-600' },
-  ]
+  // Company-specific data
+  let companyStats = null
+  if (isCompany) {
+    const myJobs = await prisma.jobPost.findMany({
+      where: { postedById: session.user.id },
+      select: { id: true },
+    })
+    const jobIds = myJobs.map(job => job.id)
+    
+    const totalApplications = await prisma.application.count({
+      where: { jobPostId: { in: jobIds } },
+    })
+    
+    const pendingApplications = await prisma.application.count({
+      where: {
+        jobPostId: { in: jobIds },
+        status: 'PENDING',
+      },
+    })
+
+    companyStats = {
+      myJobsCount: myJobs.length,
+      totalApplications,
+      pendingApplications,
+    }
+  }
+
+  const quickLinks = isCompany
+    ? [
+        { href: '/jobs/my-jobs', label: 'My Jobs', icon: FiBriefcase, color: 'from-blue-500 to-blue-600' },
+        { href: '/jobs/new', label: 'Post Job', icon: FiPlus, color: 'from-green-500 to-green-600' },
+        { href: '/jobs', label: 'Browse Jobs', icon: FiTarget, color: 'from-purple-500 to-purple-600' },
+        { href: '/profile', label: 'Edit Profile', icon: FiUser, color: 'from-orange-500 to-orange-600' },
+      ]
+    : [
+        { href: '/jobs', label: 'Browse Jobs', icon: FiBriefcase, color: 'from-blue-500 to-blue-600' },
+        { href: '/resume-builder', label: 'Build Resume', icon: FiFileText, color: 'from-green-500 to-green-600' },
+        { href: '/roadmap', label: 'Career Roadmap', icon: FiTarget, color: 'from-purple-500 to-purple-600' },
+        { href: '/profile', label: 'Edit Profile', icon: FiUser, color: 'from-orange-500 to-orange-600' },
+      ]
 
   return (
     <div className="min-h-screen gradient-subtle">
@@ -54,7 +101,7 @@ export default async function DashboardPage() {
                 Welcome back, {user?.name?.split(' ')[0]}! 👋
               </h1>
               <p className="mt-2 text-gray-600">
-                Here's your career journey overview
+                {isCompany ? 'Manage your job postings and applications' : "Here's your career journey overview"}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -82,12 +129,63 @@ export default async function DashboardPage() {
         <div className="container-custom">
           {/* Stats Cards */}
           <div className="mb-8 animate-fade-in-up">
-            <DashboardStats
-              jobCount={jobCount}
-              internshipCount={internshipCount}
-              applicationCount={user?.applications.length || 0}
-              skillCount={user?.skills.length || 0}
-            />
+            {isCompany && companyStats ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                      <FiBriefcase className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">My Job Posts</p>
+                      <p className="text-2xl font-bold text-gray-900">{companyStats.myJobsCount}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                      <FiUsers className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Applications</p>
+                      <p className="text-2xl font-bold text-gray-900">{companyStats.totalApplications}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
+                      <FiTarget className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Pending Reviews</p>
+                      <p className="text-2xl font-bold text-gray-900">{companyStats.pendingApplications}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                      <FiBriefcase className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Active Jobs</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {user?.jobPosts?.filter(job => job.isActive).length || 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <DashboardStats
+                jobCount={jobCount}
+                internshipCount={internshipCount}
+                applicationCount={user?.applications.length || 0}
+                skillCount={user?.skills.length || 0}
+              />
+            )}
           </div>
 
           {/* Quick Actions - Mobile */}
@@ -113,17 +211,74 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             {/* Left Column - Recent Activity */}
             <div className="lg:col-span-2 space-y-6 animate-fade-in-up animation-delay-100">
-              {/* Recent Applications */}
-              <div className="card p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold text-gray-900">Recent Applications</h2>
-                  <Link href="/jobs" className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center">
-                    View All
-                    <FiArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </div>
-                <RecentJobs applications={user?.applications || []} />
-              </div>
+              {isCompany ? (
+                <>
+                  {/* My Job Posts */}
+                  <div className="card p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-lg font-bold text-gray-900">My Job Posts</h2>
+                      <Link href="/jobs/my-jobs" className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center">
+                        View All
+                        <FiArrowRight className="w-4 h-4 ml-1" />
+                      </Link>
+                    </div>
+                    {user?.jobPosts && user.jobPosts.length > 0 ? (
+                      <div className="space-y-4">
+                        {user.jobPosts.map((job) => {
+                          const applicationCount = (job as any)._count?.applications || 0
+                          return (
+                          <Link
+                            key={job.id}
+                            href={`/jobs/my-jobs/${job.id}`}
+                            className="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">{job.title}</h3>
+                                <p className="text-sm text-gray-600 mb-2">{job.company} • {job.location}</p>
+                                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                  <span className="flex items-center space-x-1">
+                                    <FiUsers className="w-4 h-4" />
+                                    <span>{applicationCount} application{applicationCount !== 1 ? 's' : ''}</span>
+                                  </span>
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    job.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {job.isActive ? 'Active' : 'Inactive'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-4">No job posts yet</p>
+                        <Link href="/jobs/new" className="btn btn-primary text-sm">
+                          <FiPlus className="w-4 h-4 mr-2" />
+                          Post Your First Job
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Recent Applications */}
+                  <div className="card p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-lg font-bold text-gray-900">Recent Applications</h2>
+                      <Link href="/jobs" className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center">
+                        View All
+                        <FiArrowRight className="w-4 h-4 ml-1" />
+                      </Link>
+                    </div>
+                    <RecentJobs applications={user?.applications || []} />
+                  </div>
+                </>
+              )}
 
               {/* Profile Completion */}
               {!user?.profile && (

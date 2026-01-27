@@ -1,16 +1,37 @@
 import { prisma } from '@/lib/prisma'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import ThreadDetails from '@/components/community/ThreadDetails'
 import PostForm from '@/components/community/PostForm'
 
-export default async function ThreadPage({ params }: { params: { id: string } }) {
+export default async function ThreadPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
+  const { id } = await params
   
-  const thread = await prisma.communityThread.findUnique({
-    where: { id: params.id },
-    include: {
+  // Try to find by slug first, then by id (for backward compatibility)
+  const thread = await prisma.communityThread.findFirst({
+    where: {
+      OR: [
+        { slug: id },
+        { id },
+      ],
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      content: true,
+      category: true,
+      media: true,
+      views: true,
+      likes: true,
+      upvotes: true,
+      downvotes: true,
+      isPinned: true,
+      isLocked: true,
+      createdAt: true,
+      updatedAt: true,
       author: {
         select: {
           id: true,
@@ -19,7 +40,11 @@ export default async function ThreadPage({ params }: { params: { id: string } })
         },
       },
       posts: {
-        include: {
+        select: {
+          id: true,
+          content: true,
+          media: true,
+          createdAt: true,
           author: {
             select: {
               id: true,
@@ -37,9 +62,14 @@ export default async function ThreadPage({ params }: { params: { id: string } })
     notFound()
   }
 
+  // Redirect to slug URL if accessed via ID
+  if (thread.slug && id !== thread.slug) {
+    redirect(`/community/${thread.slug}`)
+  }
+
   // Increment view count
   await prisma.communityThread.update({
-    where: { id: params.id },
+    where: { id: thread.id },
     data: { views: { increment: 1 } },
   })
 

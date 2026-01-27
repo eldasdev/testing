@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect, useRef } from 'react'
 import { 
@@ -18,9 +19,8 @@ import {
   FiUsers,
   FiDollarSign,
   FiMail,
-  FiAlertCircle
+  FiImage
 } from 'react-icons/fi'
-import ReportIssueButton from '@/components/ReportIssueButton'
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -32,9 +32,14 @@ export default function Navbar() {
   const aboutMenuRef = useRef<HTMLDivElement>(null)
   const languageMenuRef = useRef<HTMLDivElement>(null)
 
+  // Only COMPANY users see "My Jobs" - everyone else (guests, students, admins, super admins) see "Jobs"
   const navLinks = [
-    { href: '/jobs', label: 'Jobs' },
+    ...(session?.user?.role === 'COMPANY' 
+      ? [{ href: '/jobs/my-jobs', label: 'My Jobs' }]
+      : [{ href: '/jobs', label: 'Jobs' }]
+    ),
     { href: '/community', label: 'Community' },
+    { href: '/blog', label: 'Blog' },
     { href: '/mentoring', label: 'Mentoring' },
     { href: '/pricing', label: 'Pricing' },
   ]
@@ -49,13 +54,15 @@ export default function Navbar() {
   // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false)
       }
-      if (aboutMenuRef.current && !aboutMenuRef.current.contains(event.target as Node)) {
+      if (aboutMenuRef.current && !aboutMenuRef.current.contains(target)) {
         setAboutMenuOpen(false)
       }
-      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(target)) {
         setLanguageMenuOpen(false)
       }
     }
@@ -175,9 +182,43 @@ export default function Navbar() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50/50 transition-all duration-200"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
-                    <FiUser className="w-4 h-4 text-white" />
-                  </div>
+                  {session.user?.role === 'COMPANY' ? (
+                    session.user?.logo ? (
+                      <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white">
+                        <Image
+                          src={session.user.logo}
+                          alt={`${session.user.name} logo`}
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center">
+                        <FiImage className="w-4 h-4 text-white" />
+                      </div>
+                    )
+                  ) : (
+                    session.user?.image ? (
+                      <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white">
+                        <Image
+                          src={session.user.image}
+                          alt={`${session.user.name} profile`}
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">
+                          {session.user?.name?.charAt(0) || 'U'}
+                        </span>
+                      </div>
+                    )
+                  )}
                   <span>{session.user?.name}</span>
                   <FiChevronDown className={`w-4 h-4 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -186,8 +227,49 @@ export default function Navbar() {
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">{session.user?.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
+                      <div className="flex items-center space-x-3 mb-2">
+                        {session.user?.role === 'COMPANY' ? (
+                          session.user?.logo ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 bg-white flex-shrink-0">
+                              <Image
+                                src={session.user.logo}
+                                alt={`${session.user.name} logo`}
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <FiImage className="w-5 h-5 text-white" />
+                            </div>
+                          )
+                        ) : (
+                          session.user?.image ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 bg-white flex-shrink-0">
+                              <Image
+                                src={session.user.image}
+                                alt={`${session.user.name} profile`}
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-sm font-bold">
+                                {session.user?.name?.charAt(0) || 'U'}
+                              </span>
+                            </div>
+                          )
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{session.user?.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
+                        </div>
+                      </div>
                     </div>
                     <div className="py-1">
                       <Link
@@ -224,12 +306,6 @@ export default function Navbar() {
                         <FiSettings className="w-4 h-4" />
                         <span>Settings</span>
                       </Link>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <ReportIssueButton 
-                          variant="link" 
-                          className="w-full justify-start text-gray-700 hover:text-primary-600 px-4 py-2.5"
-                        />
-                      </div>
                     </div>
                     <div className="border-t border-gray-100 pt-1">
                       <button

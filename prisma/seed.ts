@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { generateSlug } from '../lib/slug'
 
 const prisma = new PrismaClient()
 
@@ -28,10 +29,10 @@ async function main() {
       },
       skills: {
         create: [
-          { name: 'JavaScript', level: 4, category: 'Technical' },
-          { name: 'React', level: 3, category: 'Technical' },
-          { name: 'Node.js', level: 3, category: 'Technical' },
-          { name: 'Communication', level: 5, category: 'Soft Skills' },
+          { name: 'JavaScript', proficiency: 'SENIOR', category: 'Technical' },
+          { name: 'React', proficiency: 'MIDDLE', category: 'Technical' },
+          { name: 'Node.js', proficiency: 'MIDDLE', category: 'Technical' },
+          { name: 'Communication', proficiency: 'EXPERT', category: 'Soft Skills' },
         ],
       },
     },
@@ -56,9 +57,9 @@ async function main() {
       },
       skills: {
         create: [
-          { name: 'Python', level: 5, category: 'Technical' },
-          { name: 'Data Analysis', level: 4, category: 'Technical' },
-          { name: 'SQL', level: 4, category: 'Technical' },
+          { name: 'Python', proficiency: 'EXPERT', category: 'Technical' },
+          { name: 'Data Analysis', proficiency: 'SENIOR', category: 'Technical' },
+          { name: 'SQL', proficiency: 'SENIOR', category: 'Technical' },
         ],
       },
     },
@@ -253,6 +254,7 @@ async function main() {
   const blog1 = await prisma.blogPost.create({
     data: {
       title: 'How to Prepare for Your First Tech Interview',
+      slug: generateSlug('How to Prepare for Your First Tech Interview'),
       content: `Preparing for your first tech interview can be nerve-wracking, but with the right preparation, you can succeed. Here are some key tips:
 
 1. **Research the Company**: Understand their products, culture, and recent news
@@ -274,6 +276,7 @@ Remember, interviews are a two-way street - you're also evaluating if the compan
   const blog2 = await prisma.blogPost.create({
     data: {
       title: 'Building Your First Resume: A Step-by-Step Guide',
+      slug: generateSlug('Building Your First Resume: A Step-by-Step Guide'),
       content: `Your resume is often the first impression employers have of you. Here's how to make it stand out:
 
 1. **Choose the Right Format**: Use a clean, professional template
@@ -299,6 +302,7 @@ A well-crafted resume can open doors to opportunities!`,
   const thread1 = await prisma.communityThread.create({
     data: {
       title: 'Best Programming Languages to Learn in 2024',
+      slug: generateSlug('Best Programming Languages to Learn in 2024'),
       content: 'What programming languages do you think are most valuable to learn this year? I\'m a computer science student and want to focus on languages that will help me get a job after graduation.',
       category: 'Skills Development',
       authorId: student1.id,
@@ -322,6 +326,7 @@ A well-crafted resume can open doors to opportunities!`,
   const thread2 = await prisma.communityThread.create({
     data: {
       title: 'How to Network as a Student',
+      slug: generateSlug('How to Network as a Student'),
       content: 'I\'m finding it difficult to network with professionals in my field. Any tips on how to build meaningful connections as a student?',
       category: 'Networking',
       authorId: student2.id,

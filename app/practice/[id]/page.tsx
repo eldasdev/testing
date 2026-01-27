@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { FiCheck, FiX } from 'react-icons/fi'
 
-export default function PracticeChallengePage({ params }: { params: { id: string } }) {
+export default function PracticeChallengePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [solution, setSolution] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -12,7 +13,7 @@ export default function PracticeChallengePage({ params }: { params: { id: string
 
   // Mock challenge data - in production, fetch from database
   const challenge = {
-    id: params.id,
+    id: id,
     title: 'JavaScript Basics',
     type: 'coding',
     description: 'Write a function that returns the sum of two numbers',

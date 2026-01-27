@@ -55,7 +55,7 @@ export default function ResumeForm({ resumeData, setResumeData }: ResumeFormProp
 
       if (response.ok) {
         router.refresh()
-        alert('Resume saved successfully!')
+        // Note: Success message will be handled by router refresh or page state
       }
     } catch (error) {
       console.error('Failed to save resume:', error)

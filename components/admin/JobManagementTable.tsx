@@ -3,21 +3,29 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { FiEdit2, FiTrash2, FiMoreVertical, FiEye, FiToggleLeft, FiToggleRight, FiCircle } from 'react-icons/fi'
+import { FiEdit2, FiTrash2, FiMoreVertical, FiEye, FiToggleLeft, FiToggleRight, FiCircle, FiExternalLink, FiDollarSign, FiClock, FiMapPin, FiUser } from 'react-icons/fi'
 
 interface Job {
   id: string
   title: string
+  slug: string | null
   company: string
   location: string
+  address: string | null
   type: string
   experienceLevel: string
+  salaryMin: bigint | null
+  salaryMax: bigint | null
+  currency: string | null
+  applicationDeadline: Date | null
   isActive: boolean
   createdAt: Date
+  updatedAt: Date
   _count: {
     applications: number
   }
   postedBy: {
+    id: string
     name: string
     email: string
   }
@@ -63,7 +71,7 @@ export default function JobManagementTable({ jobs, isSuperAdmin }: JobManagement
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-x-auto">
       <table className="w-full">
         <thead className="bg-gray-50 border-b border-gray-100">
           <tr>
@@ -71,10 +79,16 @@ export default function JobManagementTable({ jobs, isSuperAdmin }: JobManagement
               Job Details
             </th>
             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-              Type
+              Type / Level
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Salary
             </th>
             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
               Applications
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Deadline
             </th>
             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
               Status
@@ -92,21 +106,80 @@ export default function JobManagementTable({ jobs, isSuperAdmin }: JobManagement
             <tr key={job.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4">
                 <div>
-                  <p className="font-semibold text-gray-900">{job.title}</p>
-                  <p className="text-sm text-gray-600">{job.company} • {job.location}</p>
-                  <p className="text-xs text-gray-400">Posted by: {job.postedBy.name}</p>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <Link 
+                      href={`/jobs/${job.slug || job.id}`}
+                      className="font-semibold text-gray-900 hover:text-primary-600 transition-colors"
+                      target="_blank"
+                    >
+                      {job.title}
+                    </Link>
+                    <FiExternalLink className="w-3 h-3 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-600 flex items-center space-x-1">
+                    <span>{job.company}</span>
+                    <span>•</span>
+                    <span className="flex items-center space-x-1">
+                      <FiMapPin className="w-3 h-3" />
+                      <span>{job.location}</span>
+                    </span>
+                  </p>
+                  {job.address && (
+                    <p className="text-xs text-gray-400 mt-1">{job.address}</p>
+                  )}
+                  <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
+                    <span className="flex items-center space-x-1">
+                      <FiUser className="w-3 h-3" />
+                      <span>{job.postedBy.name}</span>
+                    </span>
+                    {job.slug && (
+                      <span className="font-mono text-gray-400">/{job.slug}</span>
+                    )}
+                  </div>
                 </div>
               </td>
               <td className="px-6 py-4">
-                <span className={`px-2.5 py-1 text-xs font-semibold rounded-lg ${getTypeBadgeColor(job.type)}`}>
-                  {job.type.replace('_', ' ')}
-                </span>
+                <div className="space-y-1">
+                  <span className={`inline-block px-2.5 py-1 text-xs font-semibold rounded-lg ${getTypeBadgeColor(job.type)}`}>
+                    {job.type.replace('_', ' ')}
+                  </span>
+                  <p className="text-xs text-gray-600 capitalize">{job.experienceLevel.replace('_', ' ')}</p>
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                {job.salaryMin || job.salaryMax ? (
+                  <div className="text-sm">
+                    <div className="flex items-center space-x-1 text-gray-900 font-semibold">
+                      <FiDollarSign className="w-3 h-3" />
+                      <span>
+                        {job.salaryMin ? Number(job.salaryMin).toLocaleString() : 'N/A'}
+                        {job.salaryMin && job.salaryMax && ' - '}
+                        {job.salaryMax ? Number(job.salaryMax).toLocaleString() : ''}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">{job.currency || 'UZS'}</p>
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-400">Not specified</span>
+                )}
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-lg font-bold text-gray-900">{job._count.applications}</span>
                   <span className="text-sm text-gray-500">applicants</span>
                 </div>
+              </td>
+              <td className="px-6 py-4">
+                {job.applicationDeadline ? (
+                  <div className="flex items-center space-x-1 text-sm">
+                    <FiClock className="w-3 h-3 text-gray-400" />
+                    <span className={new Date(job.applicationDeadline) < new Date() ? 'text-red-600 font-semibold' : 'text-gray-600'}>
+                      {format(new Date(job.applicationDeadline), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-400">No deadline</span>
+                )}
               </td>
               <td className="px-6 py-4">
                 <button
@@ -142,10 +215,11 @@ export default function JobManagementTable({ jobs, isSuperAdmin }: JobManagement
                     <FiMoreVertical className="w-5 h-5 text-gray-500" />
                   </button>
                   {actionMenuOpen === job.id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-10">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-[9999]">
                       <Link
-                        href={`/jobs/${job.id}`}
+                        href={`/jobs/${job.slug || job.id}`}
                         className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        target="_blank"
                       >
                         <FiEye className="w-4 h-4" />
                         <span>View Job</span>

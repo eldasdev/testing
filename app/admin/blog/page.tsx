@@ -3,24 +3,36 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { FiFileText, FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical, FiCpu } from 'react-icons/fi'
+import { FiFileText, FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical, FiCpu, FiHeart, FiExternalLink } from 'react-icons/fi'
 import BlogManagementActions from '@/components/admin/BlogManagementActions'
 
 export default async function BlogManagementPage({
   searchParams,
 }: {
-  searchParams: { page?: string }
+  searchParams: Promise<{ page?: string }>
 }) {
   const session = await getServerSession(authOptions)
   const isSuperAdmin = session?.user.role === 'SUPER_ADMIN'
   
-  const page = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const page = parseInt(params.page || '1')
   const pageSize = 20
   const skip = (page - 1) * pageSize
 
   const [posts, totalCount] = await Promise.all([
     prisma.blogPost.findMany({
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true,
+        tags: true,
+        views: true,
+        likes: true,
+        isAIGenerated: true,
+        createdAt: true,
+        updatedAt: true,
         author: {
           select: { id: true, name: true, email: true },
         },
@@ -74,7 +86,7 @@ export default async function BlogManagementPage({
       </div>
 
       {/* Posts Table */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -83,6 +95,9 @@ export default async function BlogManagementPage({
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Author
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Engagement
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Type
@@ -103,12 +118,26 @@ export default async function BlogManagementPage({
               <tr key={post.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
                       <FiFileText className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 line-clamp-1">{post.title}</p>
-                      <p className="text-sm text-gray-500 line-clamp-1">{post.content.substring(0, 60)}...</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Link 
+                          href={`/blog/${post.slug || post.id}`}
+                          className="font-semibold text-gray-900 line-clamp-1 hover:text-primary-600 transition-colors"
+                          target="_blank"
+                        >
+                          {post.title}
+                        </Link>
+                        <FiExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      </div>
+                      <p className="text-sm text-gray-500 line-clamp-2">
+                        {post.excerpt || post.content.substring(0, 100) + '...'}
+                      </p>
+                      {post.slug && (
+                        <p className="text-xs text-gray-400 mt-1 font-mono">/{post.slug}</p>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -116,6 +145,20 @@ export default async function BlogManagementPage({
                   <div>
                     <p className="font-medium text-gray-900">{post.author.name}</p>
                     <p className="text-sm text-gray-500">{post.author.email}</p>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <span className="flex items-center space-x-1 text-gray-600">
+                      <FiEye className="w-4 h-4" />
+                      <span className="font-semibold">{post.views}</span>
+                      <span className="text-gray-500">views</span>
+                    </span>
+                    <span className="flex items-center space-x-1 text-pink-600">
+                      <FiHeart className="w-4 h-4" />
+                      <span className="font-semibold">{post.likes}</span>
+                      <span className="text-gray-500">likes</span>
+                    </span>
                   </div>
                 </td>
                 <td className="px-6 py-4">

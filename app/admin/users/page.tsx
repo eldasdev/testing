@@ -8,25 +8,26 @@ import { FiPlus, FiDownload, FiFilter } from 'react-icons/fi'
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: { role?: string; search?: string; page?: string }
+  searchParams: Promise<{ role?: string; search?: string; page?: string }>
 }) {
   const session = await getServerSession(authOptions)
   const isSuperAdmin = session?.user.role === 'SUPER_ADMIN'
   
-  const page = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const page = parseInt(params.page || '1')
   const pageSize = 20
   const skip = (page - 1) * pageSize
 
   const where: any = {}
   
-  if (searchParams.role) {
-    where.role = searchParams.role
+  if (params.role) {
+    where.role = params.role
   }
   
-  if (searchParams.search) {
+  if (params.search) {
     where.OR = [
-      { name: { contains: searchParams.search, mode: 'insensitive' } },
-      { email: { contains: searchParams.search, mode: 'insensitive' } },
+      { name: { contains: params.search, mode: 'insensitive' } },
+      { email: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 
@@ -96,7 +97,7 @@ export default async function UsersPage({
                 key={role}
                 href={`/admin/users${role === 'ALL' ? '' : `?role=${role}`}`}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  (role === 'ALL' && !searchParams.role) || searchParams.role === role
+                  (role === 'ALL' && !params.role) || params.role === role
                     ? 'bg-primary-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
@@ -117,7 +118,7 @@ export default async function UsersPage({
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <Link
               key={p}
-              href={`/admin/users?page=${p}${searchParams.role ? `&role=${searchParams.role}` : ''}`}
+              href={`/admin/users?page=${p}${params.role ? `&role=${params.role}` : ''}`}
               className={`px-4 py-2 rounded-lg ${
                 p === page
                   ? 'bg-primary-600 text-white'

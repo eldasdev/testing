@@ -6,7 +6,7 @@ export default function Footer() {
     {
       title: 'Platform',
       links: [
-        { href: '/jobs', label: 'Job Vacancies' },
+        { href: '/jobs/my-jobs', label: 'Job Vacancies' },
         { href: '/community', label: 'Community' },
         { href: '/mentoring', label: 'Mentoring' },
         { href: '/blog', label: 'AI Blog' },

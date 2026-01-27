@@ -157,7 +157,7 @@ export default function UserManagementTable({ users, isSuperAdmin }: UserManagem
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-x-auto">
       {/* Bulk Actions */}
       {selectedUsers.length > 0 && (
         <div className="bg-primary-50 px-6 py-3 flex items-center justify-between border-b border-primary-100">
@@ -288,7 +288,7 @@ export default function UserManagementTable({ users, isSuperAdmin }: UserManagem
                     <FiMoreVertical className="w-5 h-5 text-gray-500" />
                   </button>
                   {actionMenuOpen === user.id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-10">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-[9999]">
                       <button
                         onClick={() => handleAction('edit', user.id)}
                         className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"

@@ -3,30 +3,42 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { FiMessageSquare, FiFlag, FiEye, FiTrash2, FiBookmark } from 'react-icons/fi'
+import { FiMessageSquare, FiFlag, FiEye, FiTrash2, FiBookmark, FiThumbsUp, FiThumbsDown, FiHeart, FiLock, FiExternalLink } from 'react-icons/fi'
 import CommunityModerationActions from '@/components/admin/CommunityModerationActions'
 
 export default async function CommunityModerationPage({
   searchParams,
 }: {
-  searchParams: { filter?: string; page?: string }
+  searchParams: Promise<{ filter?: string; page?: string }>
 }) {
   const session = await getServerSession(authOptions)
   const isSuperAdmin = session?.user.role === 'SUPER_ADMIN'
   
-  const page = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const page = parseInt(params.page || '1')
   const pageSize = 20
   const skip = (page - 1) * pageSize
 
   const where: any = {}
-  if (searchParams.filter === 'pinned') {
+  if (params.filter === 'pinned') {
     where.isPinned = true
   }
 
   const [threads, totalCount, totalPosts] = await Promise.all([
     prisma.communityThread.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        category: true,
+        views: true,
+        likes: true,
+        upvotes: true,
+        downvotes: true,
+        isPinned: true,
+        isLocked: true,
+        createdAt: true,
         author: {
           select: { id: true, name: true, email: true },
         },
@@ -86,7 +98,7 @@ export default async function CommunityModerationPage({
           <Link
             href="/admin/community"
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              !searchParams.filter
+              !params.filter
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
@@ -96,7 +108,7 @@ export default async function CommunityModerationPage({
           <Link
             href="/admin/community?filter=pinned"
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              searchParams.filter === 'pinned'
+              params.filter === 'pinned'
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
@@ -107,7 +119,7 @@ export default async function CommunityModerationPage({
       </div>
 
       {/* Threads Table */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -136,12 +148,24 @@ export default async function CommunityModerationPage({
               <tr key={thread.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
                       <FiMessageSquare className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 line-clamp-1">{thread.title}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <Link 
+                          href={`/community/${thread.slug || thread.id}`}
+                          className="font-semibold text-gray-900 line-clamp-1 hover:text-primary-600 transition-colors"
+                          target="_blank"
+                        >
+                          {thread.title}
+                        </Link>
+                        <FiExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      </div>
                       <p className="text-sm text-gray-500 line-clamp-1">{thread.category}</p>
+                      {thread.slug && (
+                        <p className="text-xs text-gray-400 mt-1 font-mono">/{thread.slug}</p>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -152,23 +176,48 @@ export default async function CommunityModerationPage({
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center space-x-4 text-sm">
-                    <span className="flex items-center space-x-1">
-                      <FiMessageSquare className="w-4 h-4 text-gray-400" />
-                      <span>{thread._count.posts}</span>
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <span className="flex items-center space-x-1 text-blue-600">
+                      <FiMessageSquare className="w-4 h-4" />
+                      <span className="font-semibold">{thread._count.posts}</span>
+                      <span className="text-gray-500">replies</span>
                     </span>
-                    <span className="flex items-center space-x-1">
-                      <FiEye className="w-4 h-4 text-gray-400" />
-                      <span>{thread.views}</span>
+                    <span className="flex items-center space-x-1 text-gray-600">
+                      <FiEye className="w-4 h-4" />
+                      <span className="font-semibold">{thread.views}</span>
+                      <span className="text-gray-500">views</span>
+                    </span>
+                    <span className="flex items-center space-x-1 text-green-600">
+                      <FiThumbsUp className="w-4 h-4" />
+                      <span className="font-semibold">{thread.upvotes}</span>
+                    </span>
+                    <span className="flex items-center space-x-1 text-red-600">
+                      <FiThumbsDown className="w-4 h-4" />
+                      <span className="font-semibold">{thread.downvotes}</span>
+                    </span>
+                    <span className="flex items-center space-x-1 text-pink-600">
+                      <FiHeart className="w-4 h-4" />
+                      <span className="font-semibold">{thread.likes}</span>
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {thread.isPinned && (
                       <span className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
                         <FiBookmark className="w-3 h-3" />
                         <span>Pinned</span>
+                      </span>
+                    )}
+                    {thread.isLocked && (
+                      <span className="flex items-center space-x-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                        <FiLock className="w-3 h-3" />
+                        <span>Locked</span>
+                      </span>
+                    )}
+                    {!thread.isPinned && !thread.isLocked && (
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                        Active
                       </span>
                     )}
                   </div>
@@ -195,7 +244,7 @@ export default async function CommunityModerationPage({
           {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map((p) => (
             <Link
               key={p}
-              href={`/admin/community?page=${p}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}
+              href={`/admin/community?page=${p}${params.filter ? `&filter=${params.filter}` : ''}`}
               className={`px-4 py-2 rounded-lg ${
                 p === page
                   ? 'bg-primary-600 text-white'

@@ -60,7 +60,7 @@ export default function DatabaseSyncPanel() {
       // Randomly succeed or fail (90% success rate for demo)
       const success = Math.random() > 0.1
       setTasks(prev => prev.map((task, idx) => 
-        idx === i ? { ...task, status: (success ? 'success' : 'error') as const } : task
+        idx === i ? { ...task, status: success ? 'success' as const : 'error' as const } : task
       ))
     }
     

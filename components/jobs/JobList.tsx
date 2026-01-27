@@ -9,8 +9,8 @@ interface Job {
   location: string
   type: string
   experienceLevel: string
-  salaryMin?: number | null
-  salaryMax?: number | null
+  salaryMin?: number | string | bigint | null
+  salaryMax?: number | string | bigint | null
   currency?: string | null
   createdAt: Date
   tags: { name: string }[]
@@ -69,11 +69,21 @@ export default function JobList({ jobs }: JobListProps) {
                   <div className="flex items-center space-x-2 bg-green-50 px-3 py-1.5 rounded-lg">
                     <FiDollarSign className="w-4 h-4 text-green-600" />
                     <span className="font-semibold text-green-700">
-                      {job.salaryMin && job.salaryMax
-                        ? `${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()} ${job.currency || 'UZS'}`
-                        : job.salaryMin
-                        ? `From ${job.salaryMin.toLocaleString()} ${job.currency || 'UZS'}`
-                        : `Up to ${job.salaryMax?.toLocaleString()} ${job.currency || 'UZS'}`}
+                      {(() => {
+                        const min = job.salaryMin ? (typeof job.salaryMin === 'bigint' ? job.salaryMin.toString() : String(job.salaryMin)) : null
+                        const max = job.salaryMax ? (typeof job.salaryMax === 'bigint' ? job.salaryMax.toString() : String(job.salaryMax)) : null
+                        const minNum = min ? Number(min) : null
+                        const maxNum = max ? Number(max) : null
+                        
+                        if (minNum && maxNum) {
+                          return `${minNum.toLocaleString()} - ${maxNum.toLocaleString()} ${job.currency || 'UZS'}`
+                        } else if (minNum) {
+                          return `From ${minNum.toLocaleString()} ${job.currency || 'UZS'}`
+                        } else if (maxNum) {
+                          return `Up to ${maxNum.toLocaleString()} ${job.currency || 'UZS'}`
+                        }
+                        return ''
+                      })()}
                     </span>
                   </div>
                 )}

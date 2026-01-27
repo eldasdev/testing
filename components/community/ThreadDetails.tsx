@@ -1,11 +1,16 @@
+'use client'
+
 import { format } from 'date-fns'
 import { FiUser, FiHeart, FiMessageSquare } from 'react-icons/fi'
+import VoteButtons from './VoteButtons'
+import MediaDisplay from '@/components/MediaDisplay'
 
 interface Thread {
   id: string
   title: string
   content: string
   category: string
+  media?: string[]
   author: {
     id: string
     name: string
@@ -13,6 +18,8 @@ interface Thread {
   }
   views: number
   likes: number
+  upvotes: number
+  downvotes: number
   createdAt: Date
   posts: any[]
 }
@@ -25,10 +32,19 @@ export default function ThreadDetails({ thread }: ThreadDetailsProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-8">
       <div className="mb-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm rounded">
-            {thread.category}
-          </span>
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm rounded">
+              {thread.category}
+            </span>
+          </div>
+          <VoteButtons
+            threadId={thread.id}
+            initialUpvotes={thread.upvotes}
+            initialDownvotes={thread.downvotes}
+            size="md"
+            orientation="vertical"
+          />
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-4">{thread.title}</h1>
         
@@ -54,6 +70,16 @@ export default function ThreadDetails({ thread }: ThreadDetailsProps) {
         <div className="prose max-w-none">
           <p className="text-gray-700 whitespace-pre-line">{thread.content}</p>
         </div>
+
+        {thread.media && thread.media.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {thread.media.map((url, index) => (
+              <div key={index} className="rounded-lg overflow-hidden border border-gray-200">
+                <MediaDisplay url={url} alt={`Media ${index + 1}`} index={index} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="border-t pt-6">
@@ -70,6 +96,15 @@ export default function ThreadDetails({ thread }: ThreadDetailsProps) {
                 </span>
               </div>
               <p className="text-gray-700 whitespace-pre-line">{post.content}</p>
+              {post.media && post.media.length > 0 && (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {post.media.map((url: string, index: number) => (
+                    <div key={index} className="rounded-lg overflow-hidden border border-gray-200">
+                      <MediaDisplay url={url} alt={`Media ${index + 1}`} index={index} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

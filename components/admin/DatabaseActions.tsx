@@ -2,27 +2,39 @@
 
 import { useState } from 'react'
 import { FiRefreshCw, FiDownload, FiUpload, FiCheck, FiLoader } from 'react-icons/fi'
+import { useAlertModal } from '@/components/ui/AlertModal'
 
 export default function DatabaseActions() {
-  const [syncing, setSyncing] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const [syncing, setSyncing] = useState<boolean>(false)
+  const [exporting, setExporting] = useState<boolean>(false)
+  const { showAlert, AlertComponent } = useAlertModal()
 
   const handleSync = async () => {
     setSyncing(true)
     await new Promise(resolve => setTimeout(resolve, 2000))
     setSyncing(false)
-    alert('Database synchronized successfully!')
+    showAlert({
+      type: 'success',
+      title: 'Success',
+      message: 'Database synchronized successfully!',
+    })
   }
 
   const handleExport = async () => {
     setExporting(true)
     await new Promise(resolve => setTimeout(resolve, 2000))
     setExporting(false)
-    alert('Database export completed! Check your downloads.')
+    showAlert({
+      type: 'success',
+      title: 'Export Complete',
+      message: 'Database export completed! Check your downloads.',
+    })
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-6">
+    <>
+      <AlertComponent />
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-6">
       <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
@@ -57,5 +69,6 @@ export default function DatabaseActions() {
         </button>
       </div>
     </div>
+    </>
   )
 }

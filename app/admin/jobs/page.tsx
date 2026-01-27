@@ -2,31 +2,33 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import JobManagementTable from '@/components/admin/JobManagementTable'
+import JobsExportButton from '@/components/admin/JobsExportButton'
 import Link from 'next/link'
-import { FiPlus, FiDownload, FiFilter } from 'react-icons/fi'
+import { FiPlus } from 'react-icons/fi'
 
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; type?: string; page?: string }
+  searchParams: Promise<{ status?: string; type?: string; page?: string }>
 }) {
   const session = await getServerSession(authOptions)
   const isSuperAdmin = session?.user.role === 'SUPER_ADMIN'
   
-  const page = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const page = parseInt(params.page || '1')
   const pageSize = 20
   const skip = (page - 1) * pageSize
 
   const where: any = {}
   
-  if (searchParams.status === 'active') {
+  if (params.status === 'active') {
     where.isActive = true
-  } else if (searchParams.status === 'inactive') {
+  } else if (params.status === 'inactive') {
     where.isActive = false
   }
   
-  if (searchParams.type) {
-    where.type = searchParams.type
+  if (params.type) {
+    where.type = params.type
   }
 
   const [jobs, totalCount] = await Promise.all([
@@ -35,12 +37,19 @@ export default async function JobsPage({
       select: {
         id: true,
         title: true,
+        slug: true,
         company: true,
         location: true,
+        address: true,
         type: true,
         experienceLevel: true,
+        salaryMin: true,
+        salaryMax: true,
+        currency: true,
+        applicationDeadline: true,
         isActive: true,
         createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             applications: true,
@@ -48,6 +57,7 @@ export default async function JobsPage({
         },
         postedBy: {
           select: {
+            id: true,
             name: true,
             email: true,
           },
@@ -73,10 +83,7 @@ export default async function JobsPage({
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all">
-            <FiDownload className="w-4 h-4" />
-            <span>Export</span>
-          </button>
+          <JobsExportButton />
           <Link
             href="/admin/jobs/new"
             className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all"
@@ -98,7 +105,7 @@ export default async function JobsPage({
                   key={status}
                   href={`/admin/jobs${status === 'all' ? '' : `?status=${status}`}`}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    (status === 'all' && !searchParams.status) || searchParams.status === status
+                    (status === 'all' && !params.status) || params.status === status
                       ? 'bg-primary-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
@@ -116,7 +123,7 @@ export default async function JobsPage({
                   key={type}
                   href={`/admin/jobs?type=${type}`}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    searchParams.type === type
+                    params.type === type
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}

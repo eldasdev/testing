@@ -17,36 +17,38 @@ interface SearchParams {
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: SearchParams
+  searchParams: Promise<SearchParams>
 }) {
   const session = await getServerSession(authOptions)
   
-  // Redirect guest users to sign up page
-  if (!session) {
-    redirect('/auth/signin?callbackUrl=/jobs')
+  // Redirect COMPANY users to my-jobs page (they can't browse other companies' jobs)
+  if (session?.user?.role === 'COMPANY') {
+    redirect('/jobs/my-jobs')
   }
   
+  // This code below will never execute, but kept for reference
+  const params = await searchParams
   const where: any = {
     isActive: true,
   }
 
-  if (searchParams.location) {
-    where.location = { contains: searchParams.location, mode: 'insensitive' }
+  if (params.location) {
+    where.location = { contains: params.location, mode: 'insensitive' }
   }
 
-  if (searchParams.type) {
-    where.type = searchParams.type
+  if (params.type) {
+    where.type = params.type
   }
 
-  if (searchParams.experience) {
-    where.experienceLevel = searchParams.experience
+  if (params.experience) {
+    where.experienceLevel = params.experience
   }
 
-  if (searchParams.search) {
+  if (params.search) {
     where.OR = [
-      { title: { contains: searchParams.search, mode: 'insensitive' } },
-      { description: { contains: searchParams.search, mode: 'insensitive' } },
-      { company: { contains: searchParams.search, mode: 'insensitive' } },
+      { title: { contains: params.search, mode: 'insensitive' } },
+      { description: { contains: params.search, mode: 'insensitive' } },
+      { company: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 
@@ -68,6 +70,13 @@ export default async function JobsPage({
   const totalJobs = await prisma.jobPost.count({ where: { isActive: true } })
   const totalCompanies = await prisma.user.count({ where: { role: 'COMPANY' } })
 
+  // Convert BigInt values to strings for component
+  const jobsWithStringSalaries = jobs.map(job => ({
+    ...job,
+    salaryMin: job.salaryMin ? job.salaryMin.toString() : null,
+    salaryMax: job.salaryMax ? job.salaryMax.toString() : null,
+  }))
+
   return (
     <div className="min-h-screen gradient-subtle">
       {/* Hero Section */}
@@ -84,7 +93,7 @@ export default async function JobsPage({
             </p>
             
             {/* Quick stats */}
-            <div className="flex flex-wrap gap-4 sm:gap-8">
+            <div className="flex flex-wrap gap-4 sm:gap-8 mb-8">
               <div className="flex items-center space-x-2">
                 <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                   <FiBriefcase className="w-5 h-5" />
@@ -106,12 +115,6 @@ export default async function JobsPage({
             </div>
           </div>
         </div>
-        
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg className="w-full h-12 md:h-16" viewBox="0 0 1440 74" fill="none">
-            <path d="M0 74V25.5C240 -8.5 480 -8.5 720 25.5C960 59.5 1200 59.5 1440 25.5V74H0Z" fill="#f8fafc"/>
-          </svg>
-        </div>
       </section>
 
       {/* Main Content */}
@@ -123,9 +126,9 @@ export default async function JobsPage({
               <h2 className="text-xl font-bold text-gray-900">
                 {jobs.length} {jobs.length === 1 ? 'Job' : 'Jobs'} Found
               </h2>
-              {searchParams.search && (
+              {params.search && (
                 <p className="text-gray-600">
-                  Results for "{searchParams.search}"
+                  Results for "{params.search}"
                 </p>
               )}
             </div>
@@ -155,8 +158,8 @@ export default async function JobsPage({
 
             {/* Job List */}
             <main className="lg:col-span-3 animate-fade-in-up animation-delay-100">
-              {jobs.length > 0 ? (
-                <JobList jobs={jobs} />
+              {jobsWithStringSalaries.length > 0 ? (
+                <JobList jobs={jobsWithStringSalaries} />
               ) : (
                 <div className="card p-12 text-center">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

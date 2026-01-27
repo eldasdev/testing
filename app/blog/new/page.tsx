@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { FiCpu, FiArrowLeft, FiArrowRight, FiSend, FiZap } from 'react-icons/fi'
+import MediaUpload from '@/components/MediaUpload'
+import { useAlertModal } from '@/components/ui/AlertModal'
 
 export default function NewBlogPostPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const { AlertComponent } = useAlertModal()
   const [question, setQuestion] = useState('')
+  const [media, setMedia] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -31,12 +35,12 @@ export default function NewBlogPostPage() {
       const response = await fetch('/api/blog/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, media }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        router.push(`/blog/${data.id}`)
+        router.push(`/blog/${data.slug || data.postId || data.id}`)
       } else {
         setError('Failed to generate response. Please try again.')
       }
@@ -144,6 +148,16 @@ export default function NewBlogPostPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Media Upload */}
+                <div>
+                  <MediaUpload
+                    media={media}
+                    onChange={setMedia}
+                    maxFiles={5}
+                    maxSize={10}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-100">
@@ -195,6 +209,7 @@ export default function NewBlogPostPage() {
           </div>
         </div>
       </section>
+      <AlertComponent />
     </div>
   )
 }

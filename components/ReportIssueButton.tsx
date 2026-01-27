@@ -1,18 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { FiAlertCircle, FiX, FiLoader, FiCheckCircle } from 'react-icons/fi'
 
 interface ReportIssueButtonProps {
   variant?: 'button' | 'link' | 'icon'
   className?: string
+  onOpen?: () => void
 }
 
-export default function ReportIssueButton({ variant = 'button', className = '' }: ReportIssueButtonProps) {
+export default function ReportIssueButton({ variant = 'button', className = '', onOpen }: ReportIssueButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
     category: 'bug',
     subject: '',
@@ -20,8 +23,30 @@ export default function ReportIssueButton({ variant = 'button', className = '' }
     pageUrl: '',
   })
 
-  const handleOpen = () => {
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleOpen = (e?: React.MouseEvent | React.PointerEvent) => {
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+      if ('nativeEvent' in e && e.nativeEvent) {
+        e.nativeEvent.stopImmediatePropagation()
+      }
+    }
+    
+    // Close any parent dropdowns first (with a small delay to ensure event propagation is stopped)
+    if (onOpen) {
+      // Use requestAnimationFrame to ensure this runs after current event handlers
+      requestAnimationFrame(() => {
+        onOpen()
+      })
+    }
+    
+    // Open modal immediately - the portal will handle z-index
     setIsOpen(true)
+    
     // Update page URL when opening modal
     if (typeof window !== 'undefined') {
       setFormData(prev => ({
@@ -90,8 +115,9 @@ export default function ReportIssueButton({ variant = 'button', className = '' }
     <>
       {variant === 'button' && (
         <button
-          onClick={handleOpen}
-          className={`group relative inline-flex items-center space-x-2.5 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 overflow-hidden ${className}`}
+          type="button"
+          onClick={(e) => handleOpen(e)}
+          className={`group relative inline-flex items-center space-x-2.5 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 overflow-hidden cursor-pointer ${className}`}
         >
           <span className="absolute inset-0 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></span>
           <div className="relative flex items-center space-x-2.5">
@@ -106,8 +132,26 @@ export default function ReportIssueButton({ variant = 'button', className = '' }
       )}
       {variant === 'link' && (
         <button
-          onClick={handleOpen}
-          className={`group inline-flex items-center space-x-2.5 text-sm font-semibold transition-all duration-200 ${className || 'text-orange-400 hover:text-orange-300'}`}
+          type="button"
+          data-report-issue-button
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            if (e.nativeEvent) {
+              e.nativeEvent.stopImmediatePropagation()
+            }
+            // Handle on mousedown to catch it before click-outside handler
+            handleOpen(e)
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            if (e.nativeEvent) {
+              e.nativeEvent.stopImmediatePropagation()
+            }
+            handleOpen(e)
+          }}
+          className={`group inline-flex items-center space-x-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer ${className || 'text-orange-400 hover:text-orange-300'}`}
         >
           <div className="relative">
             <FiAlertCircle className="w-5 h-5 group-hover:scale-110 transition-transform drop-shadow-sm" />
@@ -118,8 +162,9 @@ export default function ReportIssueButton({ variant = 'button', className = '' }
       )}
       {variant === 'icon' && (
         <button
-          onClick={handleOpen}
-          className={`group relative p-3 text-white bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-md hover:shadow-lg hover:scale-110 transition-all duration-200 ${className}`}
+          type="button"
+          onClick={(e) => handleOpen(e)}
+          className={`group relative p-3 text-white bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-md hover:shadow-lg hover:scale-110 transition-all duration-200 cursor-pointer ${className}`}
           title="Report Issue"
         >
           <div className="relative">
@@ -129,11 +174,23 @@ export default function ReportIssueButton({ variant = 'button', className = '' }
         </button>
       )}
 
-      {/* Modal */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+      {/* Modal - Rendered via Portal */}
+      {isOpen && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsOpen(false)
+              setError(null)
+              setSuccess(false)
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
               <h2 className="text-xl font-bold text-gray-900">Report an Issue</h2>
               <button
                 onClick={() => {
@@ -287,7 +344,8 @@ export default function ReportIssueButton({ variant = 'button', className = '' }
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

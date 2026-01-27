@@ -2,7 +2,23 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { FiDatabase, FiHardDrive, FiServer, FiRefreshCw, FiDownload, FiUpload, FiAlertTriangle } from 'react-icons/fi'
+import { 
+  FiDatabase, 
+  FiHardDrive, 
+  FiServer, 
+  FiRefreshCw, 
+  FiDownload, 
+  FiUpload, 
+  FiAlertTriangle,
+  FiUsers,
+  FiBriefcase,
+  FiFileText,
+  FiMessageSquare,
+  FiEdit,
+  FiBook,
+  FiClipboard,
+  FiMap
+} from 'react-icons/fi'
 import DatabaseActions from '@/components/admin/DatabaseActions'
 
 export default async function DatabasePage() {
@@ -34,14 +50,14 @@ export default async function DatabasePage() {
   ])
 
   const tables = [
-    { name: 'Users', count: userCount, icon: '👤' },
-    { name: 'Job Posts', count: jobCount, icon: '💼' },
-    { name: 'Applications', count: applicationCount, icon: '📄' },
-    { name: 'Community Threads', count: threadCount, icon: '💬' },
-    { name: 'Community Posts', count: postCount, icon: '📝' },
-    { name: 'Blog Posts', count: blogCount, icon: '📰' },
-    { name: 'Resumes', count: resumeCount, icon: '📋' },
-    { name: 'Career Roadmaps', count: roadmapCount, icon: '🗺️' },
+    { name: 'Users', count: userCount, icon: FiUsers, color: 'text-blue-600' },
+    { name: 'Job Posts', count: jobCount, icon: FiBriefcase, color: 'text-green-600' },
+    { name: 'Applications', count: applicationCount, icon: FiFileText, color: 'text-purple-600' },
+    { name: 'Community Threads', count: threadCount, icon: FiMessageSquare, color: 'text-orange-600' },
+    { name: 'Community Posts', count: postCount, icon: FiEdit, color: 'text-pink-600' },
+    { name: 'Blog Posts', count: blogCount, icon: FiBook, color: 'text-indigo-600' },
+    { name: 'Resumes', count: resumeCount, icon: FiClipboard, color: 'text-cyan-600' },
+    { name: 'Career Roadmaps', count: roadmapCount, icon: FiMap, color: 'text-red-600' },
   ]
 
   const totalRecords = tables.reduce((acc, t) => acc + t.count, 0)
@@ -102,18 +118,23 @@ export default async function DatabasePage() {
       <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Database Tables</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {tables.map((table, index) => (
-            <div key={index} className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="text-2xl">{table.icon}</span>
-                <span className="font-semibold text-gray-900">{table.name}</span>
+          {tables.map((table, index) => {
+            const Icon = table.icon
+            return (
+              <div key={index} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className={`p-2 bg-white rounded-lg ${table.color}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-gray-900">{table.name}</span>
+                </div>
+                <p className="text-2xl font-bold text-primary-600">
+                  {table.count.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">records</p>
               </div>
-              <p className="text-2xl font-bold text-primary-600">
-                {table.count.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-500">records</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { FiBriefcase, FiUsers, FiBook, FiTarget, FiTrendingUp, FiAward, FiArrowRight, FiCheck, FiStar, FiZap } from 'react-icons/fi'
+import OrganizationLogo from '@/components/OrganizationLogo'
 
 export default function Home() {
   const features = [
@@ -122,13 +123,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
-        {/* Wave divider */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg className="w-full h-16 md:h-24" viewBox="0 0 1440 74" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 74V25.5C240 -8.5 480 -8.5 720 25.5C960 59.5 1200 59.5 1440 25.5V74H0Z" fill="#f8fafc"/>
-          </svg>
-        </div>
       </section>
 
       {/* Features Section */}
@@ -194,18 +188,24 @@ export default function Home() {
       <section className="py-16 md:py-20 bg-gray-50">
         <div className="container-custom">
           <div className="text-center animate-fade-in-up">
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-8">
               Trusted by students from
             </p>
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16">
-              {['TUIT', 'Westminster', 'Inha University', 'WIUT', 'Amity University'].map((university, index) => (
-                <div
+              {[
+                { name: 'TUIT', logo: '/logos/tuit.png', alt: 'Tashkent University of Information Technologies' },
+                { name: 'Westminster', logo: '/logos/westminster.png', alt: 'Westminster International University in Tashkent' },
+                { name: 'TSUE', logo: '/logos/tsue.png', alt: 'Tashkent State University of Economics' },
+                { name: 'Webster', logo: '/logos/webster.png', alt: 'Webster University in Tashkent' },
+                { name: 'AUT', logo: '/logos/aut.png', alt: 'American University of Technology  ' },
+              ].map((university, index) => (
+                <OrganizationLogo
                   key={index}
-                  className="text-gray-700 text-lg md:text-xl font-semibold hover:text-primary-600 transition-colors duration-200"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {university}
-                </div>
+                  name={university.name}
+                  logo={university.logo}
+                  alt={university.alt}
+                  index={index}
+                />
               ))}
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
 import PracticeChallenges from '@/components/practice/PracticeChallenges'
 import { FiCode, FiPlay, FiAward, FiTarget, FiTrendingUp, FiZap } from 'react-icons/fi'
 
@@ -11,61 +12,82 @@ export default async function PracticePage() {
     redirect('/auth/signin')
   }
 
-  const challenges = [
-    {
-      id: '1',
-      title: 'JavaScript Basics',
-      type: 'coding',
-      difficulty: 'Easy',
-      description: 'Practice fundamental JavaScript concepts including variables, functions, and control flow.',
-      category: 'Programming',
+  const now = new Date()
+  
+  // Fetch active public challenges
+  const challengesData = await prisma.challenge.findMany({
+    where: {
+      isActive: true,
+      isPublic: true,
+      AND: [
+        {
+          OR: [
+            { startDate: null },
+            { startDate: { lte: now } },
+          ],
+        },
+        {
+          OR: [
+            { endDate: null },
+            { endDate: { gte: now } },
+          ],
+        },
+      ],
     },
-    {
-      id: '2',
-      title: 'Technical Interview Prep',
-      type: 'interview',
-      difficulty: 'Medium',
-      description: 'Prepare for technical interviews with common questions asked by top companies.',
-      category: 'Interview',
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      difficulty: true,
+      description: true,
+      category: true,
+      points: true,
+      timeLimit: true,
     },
-    {
-      id: '3',
-      title: 'Data Structures Quiz',
-      type: 'quiz',
-      difficulty: 'Medium',
-      description: 'Test your knowledge of data structures: arrays, linked lists, trees, and graphs.',
-      category: 'Computer Science',
-    },
-    {
-      id: '4',
-      title: 'System Design Basics',
-      type: 'coding',
-      difficulty: 'Hard',
-      description: 'Learn system design fundamentals: scalability, load balancing, and database design.',
-      category: 'System Design',
-    },
-    {
-      id: '5',
-      title: 'SQL Fundamentals',
-      type: 'quiz',
-      difficulty: 'Easy',
-      description: 'Master SQL queries, joins, and database operations with practical exercises.',
-      category: 'Database',
-    },
-    {
-      id: '6',
-      title: 'React Components',
-      type: 'coding',
-      difficulty: 'Medium',
-      description: 'Build interactive React components and learn state management patterns.',
-      category: 'Programming',
-    },
-  ]
+    orderBy: { createdAt: 'desc' },
+  })
+
+  // Transform to match component interface
+  const challenges = challengesData.map((challenge) => ({
+    id: challenge.id,
+    title: challenge.title,
+    type: challenge.type,
+    difficulty: challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1),
+    description: challenge.description,
+    category: challenge.category,
+  }))
+
+  // Get real stats
+  const [totalChallenges, totalCompletions, categories] = await Promise.all([
+    prisma.challenge.count({
+      where: {
+        isActive: true,
+        isPublic: true,
+      },
+    }),
+    prisma.practiceSubmission.count({
+      where: {
+        score: {
+          not: null,
+        },
+      },
+    }),
+    prisma.challenge.findMany({
+      where: {
+        isActive: true,
+        isPublic: true,
+      },
+      select: {
+        category: true,
+      },
+      distinct: ['category'],
+    }),
+  ])
 
   const stats = [
-    { value: '50+', label: 'Challenges', icon: FiCode },
-    { value: '1000+', label: 'Completions', icon: FiAward },
-    { value: '5', label: 'Categories', icon: FiTarget },
+    { value: `${totalChallenges}+`, label: 'Challenges', icon: FiCode },
+    { value: `${totalCompletions}+`, label: 'Completions', icon: FiAward },
+    { value: `${categories.length}`, label: 'Categories', icon: FiTarget },
   ]
 
   const features = [
@@ -135,11 +157,6 @@ export default async function PracticePage() {
           </div>
         </div>
         
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg className="w-full h-12 md:h-16" viewBox="0 0 1440 74" fill="none">
-            <path d="M0 74V25.5C240 -8.5 480 -8.5 720 25.5C960 59.5 1200 59.5 1440 25.5V74H0Z" fill="#f8fafc"/>
-          </svg>
-        </div>
       </section>
 
       {/* Features */}
