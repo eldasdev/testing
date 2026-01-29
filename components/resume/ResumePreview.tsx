@@ -200,7 +200,7 @@ export default function ResumePreview({ resumeData }: ResumePreviewProps) {
       const skillGap = 3
       
       resumeData.skills.forEach((skill: any) => {
-        const skillName = skill.name || skill
+        const skillName = typeof skill === 'string' ? skill : (skill?.name ?? 'Skill')
         const skillWidth = pdf.getTextWidth(skillName) + (skillPadding * 2)
         
         // Check if we need to wrap to next line
@@ -294,7 +294,7 @@ export default function ResumePreview({ resumeData }: ResumePreviewProps) {
       
       const langText = resumeData.languages.map((lang: any) => {
         if (typeof lang === 'string') return lang
-        return `${lang.name}${lang.level ? ` (${lang.level})` : ''}`
+        return `${lang?.name ?? ''}${lang?.level ? ` (${lang.level})` : ''}`
       }).join('  •  ')
       
       pdf.text(langText, margin, yPos)
@@ -464,7 +464,7 @@ export default function ResumePreview({ resumeData }: ResumePreviewProps) {
                   key={index}
                   className="px-3 py-1 bg-blue-50 text-primary-700 rounded-md text-sm border border-blue-100"
                 >
-                  {skill.name || skill || 'Skill'}
+                  {typeof skill === 'string' ? skill : (skill?.name ?? 'Skill')}
                 </span>
               ))}
             </div>
@@ -523,7 +523,7 @@ export default function ResumePreview({ resumeData }: ResumePreviewProps) {
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               {resumeData.languages.map((lang: any, index: number) => (
                 <span key={index} className="text-gray-700 text-sm">
-                  {typeof lang === 'string' ? lang : `${lang.name}${lang.level ? ` (${lang.level})` : ''}`}
+                  {typeof lang === 'string' ? lang : `${lang?.name ?? ''}${lang?.level ? ` (${lang.level})` : ''}`}
                 </span>
               ))}
             </div>

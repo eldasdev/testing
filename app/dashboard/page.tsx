@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateCareerReadiness } from '@/lib/performance'
 import DashboardStats from '@/components/dashboard/DashboardStats'
 import RecentJobs from '@/components/dashboard/RecentJobs'
 import PerformanceCard from '@/components/dashboard/PerformanceCard'
@@ -74,6 +75,10 @@ export default async function DashboardPage() {
       totalApplications,
       pendingApplications,
     }
+  }
+
+  if (!isCompany) {
+    await recalculateCareerReadiness(session.user.id)
   }
 
   const quickLinks = isCompany
@@ -300,11 +305,13 @@ export default async function DashboardPage() {
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6 animate-fade-in-up animation-delay-200">
-              {/* Performance */}
-              <div className="card p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Performance Score</h2>
-                <PerformanceCard userId={session.user.id} />
-              </div>
+              {/* Performance Score - students only */}
+              {!isCompany && (
+                <div className="card p-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Performance Score</h2>
+                  <PerformanceCard userId={session.user.id} />
+                </div>
+              )}
 
               {/* Quick Actions */}
               <div className="card p-6">

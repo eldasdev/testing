@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateCareerReadiness } from '@/lib/performance'
 import { z } from 'zod'
 
 const updateSkillSchema = z.object({
@@ -48,6 +49,7 @@ export async function PATCH(
       },
     })
 
+    await recalculateCareerReadiness(session.user.id)
     return NextResponse.json(skill)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -101,6 +103,7 @@ export async function DELETE(
       where: { id },
     })
 
+    await recalculateCareerReadiness(session.user.id)
     return NextResponse.json({ message: 'Skill removed' })
   } catch (error) {
     console.error('Error removing skill:', error)

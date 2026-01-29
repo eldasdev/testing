@@ -32,31 +32,41 @@ export default function ResumeBuilderPage() {
     certifications: [] as any[],
   })
 
-  // Fetch user profile data including image
+  // Fetch user profile and skills (for pre-fill from profile / catalog)
   useEffect(() => {
-    if (session?.user?.id) {
-      fetch('/api/profile')
-        .then(res => res.json())
-        .then(data => {
-          if (data.user) {
-            setResumeData(prev => ({
-              ...prev,
-              personalInfo: {
-                ...prev.personalInfo,
-                fullName: data.user.name || prev.personalInfo.fullName,
-                email: data.user.email || prev.personalInfo.email,
-                phone: data.user.phone || prev.personalInfo.phone,
-                address: data.user.location || prev.personalInfo.address,
-                linkedin: data.user.profile?.linkedinUrl || prev.personalInfo.linkedin,
-                github: data.user.profile?.githubUrl || prev.personalInfo.github,
-                portfolio: data.user.profile?.portfolioUrl || prev.personalInfo.portfolio,
-                profileImage: data.user.image || null,
-              },
+    if (!session?.user?.id) return
+    Promise.all([
+      fetch('/api/profile').then((r) => r.json()),
+      fetch('/api/skills/user').then((r) => (r.ok ? r.json() : [])),
+    ])
+      .then(([profileRes, userSkills]) => {
+        const profile = profileRes.user
+        const skillsList = Array.isArray(userSkills) ? userSkills : []
+        setResumeData((prev) => {
+          const next = { ...prev }
+          if (profile) {
+            next.personalInfo = {
+              ...prev.personalInfo,
+              fullName: profile.name || prev.personalInfo.fullName,
+              email: profile.email || prev.personalInfo.email,
+              phone: profile.phone || prev.personalInfo.phone,
+              address: profile.location || prev.personalInfo.address,
+              linkedin: profile.profile?.linkedinUrl || prev.personalInfo.linkedin,
+              github: profile.profile?.githubUrl || prev.personalInfo.github,
+              portfolio: profile.profile?.portfolioUrl || prev.personalInfo.portfolio,
+              profileImage: profile.image || null,
+            }
+          }
+          // Pre-fill skills from profile only when resume has no skills yet
+          if (prev.skills.length === 0 && skillsList.length > 0) {
+            next.skills = skillsList.map((s: { name?: string }) => ({
+              name: typeof s.name === 'string' ? s.name : String(s.name ?? ''),
             }))
           }
+          return next
         })
-        .catch(err => console.error('Failed to fetch user profile:', err))
-    }
+      })
+      .catch((err) => console.error('Failed to fetch profile/skills:', err))
   }, [session])
 
   const features = [

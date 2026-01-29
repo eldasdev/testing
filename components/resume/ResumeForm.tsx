@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FiPlus, FiTrash2, FiSave } from 'react-icons/fi'
 import { useRouter } from 'next/navigation'
+import ResumeSkillSelector from '@/components/resume/ResumeSkillSelector'
 
 interface ResumeFormProps {
   resumeData: any
@@ -247,35 +248,14 @@ export default function ResumeForm({ resumeData, setResumeData }: ResumeFormProp
         ))}
       </section>
 
-      {/* Skills */}
+      {/* Skills – integrated with skills catalog (same as profile) */}
       <section>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Skills</h3>
-          <button
-            onClick={() => addItem('skills')}
-            className="flex items-center space-x-1 text-primary-600 hover:text-primary-700"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>Add</span>
-          </button>
-        </div>
-        {resumeData.skills.map((skill: any, index: number) => (
-          <div key={index} className="flex items-center space-x-2 mb-2">
-            <input
-              type="text"
-              placeholder="Skill name"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md"
-              value={skill.name || ''}
-              onChange={(e) => updateItem('skills', index, 'name', e.target.value)}
-            />
-            <button
-              onClick={() => removeItem('skills', index)}
-              className="text-red-600 hover:text-red-700"
-            >
-              <FiTrash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+        <h3 className="text-lg font-semibold mb-4">Skills</h3>
+        <ResumeSkillSelector
+          selectedSkills={resumeData.skills}
+          onSkillsChange={(skills) => setResumeData({ ...resumeData, skills })}
+          maxSkills={25}
+        />
       </section>
     </div>
   )

@@ -3,7 +3,9 @@ import { redirect } from 'next/navigation'
 import Image from 'next/image'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateCareerReadiness } from '@/lib/performance'
 import ProfileForm from '@/components/profile/ProfileForm'
+import PerformanceCard from '@/components/dashboard/PerformanceCard'
 import ReportIssueButton from '@/components/ReportIssueButton'
 import { FiUser, FiShield, FiAward, FiCalendar, FiImage } from 'react-icons/fi'
 
@@ -31,6 +33,10 @@ export default async function ProfilePage() {
 
   if (!user) {
     redirect('/auth/signin')
+  }
+
+  if (user.role === 'STUDENT') {
+    await recalculateCareerReadiness(user.id)
   }
 
   const stats = [
@@ -107,10 +113,17 @@ export default async function ProfilePage() {
         </div>
       </section>
 
-      {/* Profile Form */}
+      {/* Profile Form + Performance Score (students only) */}
       <section className="section-sm">
         <div className="container-custom">
-          <div className="max-w-4xl animate-fade-in-up animation-delay-100">
+          <div className="max-w-4xl animate-fade-in-up animation-delay-100 space-y-6">
+            {/* Performance Score - students only */}
+            {user.role === 'STUDENT' && (
+              <div className="card p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Performance Score</h2>
+                <PerformanceCard userId={user.id} />
+              </div>
+            )}
             <div className="card p-6 md:p-8">
               <div className="flex items-center space-x-3 mb-6 pb-6 border-b border-gray-100">
                 <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateCareerReadiness } from '@/lib/performance'
 import { z } from 'zod'
 
 const userSkillSchema = z.object({
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    await recalculateCareerReadiness(session.user.id)
     return NextResponse.json(skill, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -160,6 +162,7 @@ export async function DELETE(request: NextRequest) {
         where: { id: skillId },
       })
 
+      await recalculateCareerReadiness(session.user.id)
       return NextResponse.json({ message: 'Skill removed' })
     }
 
